@@ -1,0 +1,573 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ROOT
+  ADMIN
+}
+
+enum Gender {
+  Male
+  Famale
+}
+
+model User {
+  id              String                  @id @default(uuid())
+  phone           String                  @unique
+  email           String?                 @unique
+  password        String?
+  name            String?
+  lastName        String?
+  middleName      String?
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @default(now())
+  isActive        Boolean                 @default(false)
+  otp             OneTimePassword[]
+  gender          Gender?
+  birthday        DateTime?
+  orders          Orders[]
+  count           Int?                    @default(0)
+  lastOrder       DateTime?
+  totalSum        Float?                  @default(0)
+  deliveryAddress DeliveryAddress2Users[]
+  totalPoints     Int?                    @default(0)
+  favoriteGoods   User2Goods[]
+  cart            Cart[]
+}
+
+model DeliveryAddress {
+  id      String                  @id @default(uuid())
+  country String
+  region  String
+  city    String
+  street  String
+  house   String
+  corp    String?
+  apart   String?
+  floor   String?
+  user    DeliveryAddress2Users[]
+}
+
+model DeliveryAddress2Users {
+  id                String          @id @default(uuid())
+  userId            String
+  deliveryAddressId String
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveryAddress   DeliveryAddress @relation(fields: [deliveryAddressId], references: [id], onDelete: Cascade)
+}
+
+model User2Goods {
+  id      String @id @default(uuid())
+  userId  String
+  goodsId String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goods   Goods  @relation(fields: [goodsId], references: [id], onDelete: Cascade)
+}
+
+// готово
+model Admin {
+  id                String             @id @default(uuid())
+  parentId          String?
+  phone             String             @unique
+  email             String             @unique
+  password          String
+  name              String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @default(now())
+  isActive          Boolean            @default(true)
+  role              Role?
+  restourants       Admin2Restourant[]
+  title             String?
+  description       String?
+  staffId           String?
+  staff             Staff?             @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  doubleEmailNotify Boolean?           @default(false)
+}
+
+model Admin2Restourant {
+  id           String     @id @default(uuid())
+  adminId      String
+  restourantId String
+  admin        Admin      @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  restaurant   Restaurant @relation(fields: [restourantId], references: [id], onDelete: Cascade)
+}
+
+// готово
+model AdminSettings {
+  id          String                     @id @default(uuid())
+  nickName    String
+  password    String
+  isActive    Boolean?                   @default(true)
+  restaurants Restourant2AdminSettings[]
+}
+
+// готово
+model PaymentSystemIntegration {
+  id            String                                @id @default(uuid())
+  minSumOrder   Float
+  deliveryCost  Float
+  paymentSystem String
+  login         String
+  password      String
+  secretKey     String
+  restaurant    Restourant2PaymentSystemIntegration[]
+}
+
+model AccountingSystemSettings {
+  id              String   @id @default(uuid())
+  secretKey       String
+  secreFilialtKey String
+  isActive        Boolean? @default(true)
+}
+
+// готово
+model Restourant2PaymentSystemIntegration {
+  id                         String                   @id @default(uuid())
+  restaurantId               String
+  paymentSystemIntegrationId String
+  restaurant                 Restaurant               @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  paymentSystemIntegration   PaymentSystemIntegration @relation(fields: [paymentSystemIntegrationId], references: [id], onDelete: Cascade)
+}
+
+// готово
+model Restourant2AdminSettings {
+  id              String        @id @default(uuid())
+  restaurantId    String
+  adminSettingsId String
+  restaurant      Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  adminSettings   AdminSettings @relation(fields: [adminSettingsId], references: [id], onDelete: Cascade)
+}
+
+// готово
+model OneTimePassword {
+  id        String   @id @default(uuid())
+  otp       String
+  users     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  createdAt DateTime @default(now())
+}
+
+// готово
+model Restaurant {
+  id                       String                                @id @default(uuid())
+  parentId                 String
+  name                     String
+  slug                     String                                @unique
+  address                  String
+  createdAt                DateTime                              @default(now())
+  updatedAt                DateTime                              @default(now())
+  isActive                 Boolean?                              @default(true)
+  businessAddress          String
+  workTime                 String
+  mapLink                  String
+  contactEmail             String
+  deliveryZone             DeliveryZone[]
+  smsOrCallIntegration     Restourant2AdminSettings[]
+  paymentSystemIntegration Restourant2PaymentSystemIntegration[]
+
+  deliveryType     DeliveryType[]
+  measurementUnits MeasurmentsUnits[]
+  paymentVariants  PaymentVariants[]
+  statuses         Status[]
+
+  admin    Admin2Restourant[]
+  position Position[]
+
+  news             News[]
+  order            Orders[]
+  materialCategory MaterialCategory[]
+  materials        Materials[]
+  categoriesGoods  CategoriesGoods[]
+  followingGoods   FollowingGoods[]
+  goods            Goods[]
+  oerderNotes      OrderNotes[]
+  staff            Staff[]
+  sales            Sales[]
+  modificators     Modificators[]
+}
+
+// готово
+model DeliveryType {
+  id           String      @id @default(uuid())
+  parentId     String?
+  title        String
+  isActive     Boolean?    @default(true)
+  restourantId String?
+  restaurant   Restaurant? @relation(fields: [restourantId], references: [id], onDelete: Cascade)
+}
+
+// готово
+model Status {
+  id           String      @id @default(uuid())
+  parentId     String?
+  title        String
+  isActive     Boolean?    @default(true)
+  restourantId String?
+  restaurant   Restaurant? @relation(fields: [restourantId], references: [id], onDelete: Cascade)
+}
+
+// готово
+model MeasurmentsUnits {
+  id             String           @id @default(uuid())
+  parentId       String?
+  title          String
+  isActive       Boolean?         @default(true)
+  restourantId   String?
+  restaurant     Restaurant?      @relation(fields: [restourantId], references: [id], onDelete: Cascade)
+  materials      Materials[]
+  followingGoods FollowingGoods[]
+  goods          Goods[]
+  modificators   Modificators[]
+}
+
+// готово
+model PaymentVariants {
+  id           String      @id @default(uuid())
+  parentId     String?
+  title        String
+  isActive     Boolean?    @default(true)
+  restourantId String?
+  restaurant   Restaurant? @relation(fields: [restourantId], references: [id], onDelete: Cascade)
+}
+
+// готово
+model MaterialCategory {
+  id           String      @id @default(uuid())
+  parentId     String?
+  title        String
+  description  String
+  color        String
+  isHidden     Boolean?    @default(false)
+  restourantId String?
+  restaurant   Restaurant? @relation(fields: [restourantId], references: [id], onDelete: Cascade)
+  materials    Materials[]
+}
+
+// готово
+model Materials {
+  id                String            @id @default(uuid())
+  parentId          String?
+  title             String
+  description       String
+  article           String
+  image             String
+  categoryId        String
+  category          MaterialCategory? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  measurementUnitId String
+  measurementUnit   MeasurmentsUnits? @relation(fields: [measurementUnitId], references: [id], onDelete: Cascade)
+  price             Float
+  isActive          Boolean?          @default(true)
+  restourantId      String?
+  restaurant        Restaurant?       @relation(fields: [restourantId], references: [id], onDelete: Cascade)
+  metaTitle         String?
+  metaDescription   String?
+  metaKeywords      String?
+  metaRobots        String?
+  goods             Goods2Materials[]
+}
+
+model Goods2Materials {
+  id          String    @id @default(uuid())
+  goodsId     String
+  materialsId String
+  goods       Goods     @relation(fields: [goodsId], references: [id], onDelete: Cascade)
+  materials   Materials @relation(fields: [materialsId], references: [id], onDelete: Cascade)
+}
+
+// готово
+model CategoriesGoods {
+  id              String           @id @default(uuid())
+  parentId        String?
+  title           String
+  description     String
+  image           String
+  color           String
+  isHidden        Boolean?         @default(false)
+  isActive        Boolean?         @default(true)
+  metaTitle       String?
+  metaDescription String?
+  metaKeywords    String?
+  metaRobots      String?
+  restourantId    String?
+  restaurant      Restaurant?      @relation(fields: [restourantId], references: [id], onDelete: Cascade)
+  goods           Goods[]
+  followingGoods  FollowingGoods[]
+  modificators    Modificators[]
+}
+
+// готово
+model FollowingGoods {
+  id                String            @id @default(uuid())
+  parentId          String?
+  title             String
+  description       String
+  article           String
+  price             Float
+  measurementUnitId String
+  measurementUnit   MeasurmentsUnits? @relation(fields: [measurementUnitId], references: [id], onDelete: Cascade)
+  image             String
+  color             String
+  isHidden          Boolean?          @default(false)
+  isActive          Boolean?          @default(true)
+  restourantId      String
+  restaurant        Restaurant?       @relation(fields: [restourantId], references: [id], onDelete: Cascade)
+  metaTitle         String?
+  metaDescription   String?
+  metaKeywords      String?
+  metaRobots        String?
+  categoriesGoodsId String?
+  categoriesGoods   CategoriesGoods?  @relation(fields: [categoriesGoodsId], references: [id], onDelete: Cascade)
+}
+
+// готово
+model Goods {
+  id                String            @id @default(uuid())
+  parentId          String?
+  title             String
+  slug              String
+  description       String
+  article           String
+  price             Float
+  measurementUnitId String
+  measurementUnit   MeasurmentsUnits? @relation(fields: [measurementUnitId], references: [id], onDelete: Cascade)
+  size              String
+  weight            String
+  kkal              String
+  proteins          String
+  fats              String
+  carbohydrates     String
+  smallImage        String
+  image             String
+  color             String
+  isHidden          Boolean?          @default(false)
+  isActive          Boolean?          @default(true)
+  isSale            Boolean?          @default(false)
+  isDelivery        Boolean?          @default(false)
+  restourantId      String?
+  restaurant        Restaurant?       @relation(fields: [restourantId], references: [id], onDelete: Cascade)
+  restaurantPrice   RestaurantPrice[]
+  metaTitle         String?
+  metaDescription   String?
+  metaKeywords      String?
+  metaRobots        String?
+  categoriesGoodsId String
+  likes             Int?              @default(0)
+  categoriesGoods   CategoriesGoods?  @relation(fields: [categoriesGoodsId], references: [id], onDelete: Cascade)
+  goodsComposition  Goods2Materials[]
+  orders            Order2Goods[]
+  usersFavorites    User2Goods[]
+  sales             Goods2Sales[]
+  cart              Cart2Goods[]
+}
+
+model RestaurantPrice {
+  id           String  @id @default(uuid())
+  price        String
+  restaurantId String
+  goods        Goods?  @relation(fields: [goodsId], references: [id])
+  goodsId      String?
+}
+
+model Goods2Sales {
+  id      String @id @default(uuid())
+  goodsId String
+  goods   Goods? @relation(fields: [goodsId], references: [id], onDelete: Cascade)
+  salesId String
+  sales   Sales? @relation(fields: [salesId], references: [id], onDelete: Cascade)
+}
+
+// готово
+model OrderNotes {
+  id           String      @id @default(uuid())
+  title        String
+  description  String
+  color        String
+  isActive     Boolean?    @default(true)
+  restourantId String?
+  restaurant   Restaurant? @relation(fields: [restourantId], references: [id], onDelete: Cascade)
+}
+
+// готово
+model DeliveryZone {
+  id                              String      @id @default(uuid())
+  cityName                        String
+  zoneName                        String
+  description                     String
+  minOrderPrice                   Float
+  deliveryPriceIfNotMinOrderPrice Float
+  comment                         String?
+  isActive                        Boolean?    @default(true)
+  restourantId                    String?
+  restaurant                      Restaurant? @relation(fields: [restourantId], references: [id], onDelete: Cascade)
+}
+
+// готово
+model Position {
+  id             String      @id @default(uuid())
+  parentId       String?
+  title          String
+  description    String
+  jobInstruction String
+  restourantId   String?
+  restaurant     Restaurant? @relation(fields: [restourantId], references: [id], onDelete: Cascade)
+  staff          Staff[]
+}
+
+// готово
+model Staff {
+  id           String      @id @default(uuid())
+  parentId     String?
+  firstName    String
+  lastName     String
+  middleName   String
+  phone        String
+  email        String
+  address      String
+  positionId   String
+  position     Position?   @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  restourantId String
+  restaurant   Restaurant? @relation(fields: [restourantId], references: [id], onDelete: Cascade)
+  workTimeFrom String
+  workTimeTo   String
+  isActive     Boolean?    @default(true)
+  admin        Admin[]
+}
+
+// готово
+model PaymentStatus {
+  id       String   @id @default(uuid())
+  title    String
+  isActive Boolean? @default(true)
+  order    Orders[]
+}
+
+// готово
+model Sales {
+  id           String        @id @default(uuid())
+  parentId     String?
+  title        String
+  slug         String
+  description  String
+  bigImage     String
+  smallImage   String
+  isPercent    Boolean?      @default(false)
+  countPercent Float?
+  isSum        Boolean?      @default(false)
+  countSum     Float?
+  minSum       Float?
+  isActive     Boolean?      @default(true)
+  saleRange    String
+  restourantId String
+  restaurant   Restaurant?   @relation(fields: [restourantId], references: [id], onDelete: Cascade)
+  goods        Goods2Sales[]
+}
+
+// готово
+model Modificators {
+  id                String            @id @default(uuid())
+  parentId          String?
+  title             String
+  description       String
+  slug              String
+  article           String
+  price             Float
+  measurementUnitId String
+  measurementUnit   MeasurmentsUnits? @relation(fields: [measurementUnitId], references: [id], onDelete: Cascade)
+  carbohydrates     String
+  kkal              String
+  proteins          String
+  fats              String
+  image             String
+  color             String
+  isActive          Boolean?          @default(true)
+  isHidden          Boolean?          @default(false)
+  restourantId      String
+  restaurant        Restaurant?       @relation(fields: [restourantId], references: [id], onDelete: Cascade)
+  metaTitle         String?
+  metaDescription   String?
+  metaKeywords      String?
+  metaRobots        String?
+  categoriesGoodsId String
+  categoriesGoods   CategoriesGoods?  @relation(fields: [categoriesGoodsId], references: [id], onDelete: Cascade)
+}
+
+model Orders {
+  id              String         @id @default(uuid())
+  createdAt       DateTime       @default(now())
+  restourantId    String
+  restaurant      Restaurant?    @relation(fields: [restourantId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User?          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isDelivery      Boolean?       @default(false)
+  isTakeAway      Boolean?       @default(false)
+  isSelfService   Boolean?       @default(false)
+  isPaid          Boolean?       @default(false)
+  isCanceled      Boolean?       @default(false)
+  isCompleted     Boolean?       @default(false)
+  isConfirmed     Boolean?       @default(false)
+  isProcessing    Boolean?       @default(false)
+  isRejected      Boolean?       @default(false)
+  isReturned      Boolean?       @default(false)
+  orderNumber     String
+  orderDate       DateTime
+  orderTime       DateTime
+  orderType       String
+  orderSum        Float
+  paymentType     String
+  paymentStatusId String
+  paymentStatus   PaymentStatus? @relation(fields: [paymentStatusId], references: [id], onDelete: Cascade)
+  goods           Order2Goods[]
+}
+
+model Order2Goods {
+  id      String  @id @default(uuid())
+  orderId String
+  order   Orders? @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  goodsId String
+  goods   Goods?  @relation(fields: [goodsId], references: [id], onDelete: Cascade)
+  count   Float
+  price   Float
+  sum     Float
+  comment String
+}
+
+model News {
+  id           String      @id @default(uuid())
+  parentId     String
+  name         String
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @default(now())
+  isActive     Boolean?    @default(true)
+  restourantId String
+  restaurant   Restaurant? @relation(fields: [restourantId], references: [id], onDelete: Cascade)
+}
+
+model Cart {
+  id        String       @id @default(uuid())
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @default(now())
+  userId    String?
+  user      User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goods     Cart2Goods[]
+}
+
+model Cart2Goods {
+  id      String  @id @default(uuid())
+  count   Float?
+  price   Float?
+  sum     Float?
+  comment String?
+  cartId  String
+  cart    Cart?   @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  goodsId String
+  goods   Goods?  @relation(fields: [goodsId], references: [id], onDelete: Cascade)
+}
